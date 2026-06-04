@@ -1,4 +1,4 @@
 # OJ287
-major works on OJ287 SMBBH Blazar AGN system
+major works on OJ287 SMBBH Blazar-tyoe AGN system
 
-will update only after releases
+-will update only after releases-
