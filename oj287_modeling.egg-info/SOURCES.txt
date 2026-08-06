@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+setup.cfg
+oj287_modeling.egg-info/PKG-INFO
+oj287_modeling.egg-info/SOURCES.txt
+oj287_modeling.egg-info/dependency_links.txt
+oj287_modeling.egg-info/requires.txt
+oj287_modeling.egg-info/top_level.txt
