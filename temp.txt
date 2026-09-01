@@ -1,1 +1,0 @@
-Help me enhance `run_pipeline.py` with a command-line interface that loads `oj287_modeling/data/outbursts.csv`, computes predicted outburst times for selected indices, compares them to observed times, and prints a summary table with residuals and chi-squared using `oj287_modeling/src/fit_engine.py`.
