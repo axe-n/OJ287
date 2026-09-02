@@ -49,6 +49,11 @@ def _u0(l: float, e: float) -> float:
 	return l + e * (3.0 * w - 4.0 * w**3)
 
 
+def _red(l: float) -> tuple[float, float]:
+	q = math.remainder(l, 2.0 * math.pi)
+	return q, l - q
+
+
 def _f(u: float, l: float, e: float) -> float:
 	return u - e * math.sin(u) - l
 
@@ -67,14 +72,15 @@ def solve_kepler_mikkola(
 	A short Newton refinement makes the returned root meet ``tol``.
 	"""
 	l, e, tol, max_iter = _args(l, e, tol, max_iter)
-	u = _u0(l, e)
+	q, cyc = _red(l)
+	u = _u0(q, e)
 	for _ in range(max_iter):
-		f = _f(u, l, e)
+		f = _f(u, q, e)
 		if abs(f) <= tol:
-			return u
+			return u + cyc
 		u -= f / (1.0 - e * math.cos(u))
-	if abs(_f(u, l, e)) <= tol:
-		return u
+	if abs(_f(u, q, e)) <= tol:
+		return u + cyc
 	raise RuntimeError("Mikkola solver did not converge")
 
 
@@ -86,24 +92,26 @@ def solve_kepler_danby(
 ) -> float:
 	"""Solve Kepler's equation with Mikkola initialization and Danby steps."""
 	l, e, tol, max_iter = _args(l, e, tol, max_iter)
-	u = _u0(l, e)
+	q, cyc = _red(l)
+	u = _u0(q, e)
 	for _ in range(max_iter):
-		f = _f(u, l, e)
+		f = _f(u, q, e)
 		if abs(f) <= tol:
-			return u
+			return u + cyc
 		fp = 1.0 - e * math.cos(u)
 		fpp = e * math.sin(u)
 		f3 = e * math.cos(u)
 		f4 = -fpp
 		u1 = -f / fp
-		u2 = -f / (fp + 0.5 * fpp * u1)
-		u3 = -f / (fp + 0.5 * fpp * u2 + f3 * u2**2 / 6.0)
-		u4 = -f / (
-			fp + 0.5 * fpp * u3 + f3 * u3**2 / 6.0 + f4 * u3**3 / 24.0
-		)
+		d2 = fp + 0.5 * fpp * u1
+		u2 = -f / d2 if d2 else u1
+		d3 = fp + 0.5 * fpp * u2 + f3 * u2**2 / 6.0
+		u3 = -f / d3 if d3 else u2
+		d4 = fp + 0.5 * fpp * u3 + f3 * u3**2 / 6.0 + f4 * u3**3 / 24.0
+		u4 = -f / d4 if d4 else u3
 		u += u4
-	if abs(_f(u, l, e)) <= tol:
-		return u
+	if abs(_f(u, q, e)) <= tol:
+		return u + cyc
 	raise RuntimeError("Danby solver did not converge")
 
 
@@ -115,3 +123,4 @@ def solve_kepler(
 ) -> float:
 	"""Return the default Mikkola-Danby solution of Kepler's equation."""
 	return solve_kepler_danby(l, e, tol, max_iter)
+
