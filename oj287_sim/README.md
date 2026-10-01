@@ -74,7 +74,7 @@ Mikkola's correction. Danby iterations then reduce the residual of
 2. Generate a time grid.
 3. Compute `l(t)` and solve for `u`.
 4. Compute `v(t)` and `phi(t)`.
-5. Estimate `phi = i*pi` event times by interpolation between samples.
+5. Estimate `phi = i*pi` event times and refine them with bounded Brent roots.
 6. Test numerical residuals before using results for analysis.
 
 ## Get the project
@@ -193,16 +193,16 @@ crossing detection, and one plot of `phi(t)`.
 - `e_t` and `e_phi` must satisfy `0 <= e < 1`.
 - All scalar parameters must be finite real numbers.
 - Angular parameters and outputs are in radians.
-- `beta_phi` is computed automatically from `e_phi` unless supplied.
+- `beta_phi` is computed automatically from `e_phi`.
 - The time array should be one-dimensional and ordered for meaningful event
-	interpolation.
+	refinement.
 
 ## Reproducibility
 
 Record the parameter values, time-grid spacing, solver tolerance, and package
 version with any scientific result. The default solver tolerance is `1e-12`.
-The detected crossing times depend on the time-grid spacing because crossings
-are initially estimated by linear interpolation between samples.
+The detected crossing brackets depend on the time-grid spacing; each crossing
+is refined to about `1e-12` within its bracket.
 
 ## Development install
 

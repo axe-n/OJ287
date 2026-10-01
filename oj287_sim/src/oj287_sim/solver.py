@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from numbers import Real
 
+import numpy as np
+
 
 def _fin(x: Real, name: str) -> float:
 	if isinstance(x, bool) or not isinstance(x, Real):
@@ -45,6 +47,20 @@ def _u0(l: float, e: float) -> float:
 		q = b - d
 	z = math.copysign(abs(q) ** (1.0 / 3.0), q)
 	s = 0.0 if z == 0.0 else z - a / z
+	w = s - 0.078 * s**5 / (1.0 + e)
+	return l + e * (3.0 * w - 4.0 * w**3)
+
+
+def _u0_array(l: np.ndarray, e: float) -> np.ndarray:
+	a = (1.0 - e) / (4.0 * e + 0.5)
+	b = l / (2.0 * (4.0 * e + 0.5))
+	d = np.sqrt(b * b + a * a * a)
+	q = b + d
+	q = np.where(q == 0.0, b - d, q)
+	z = np.cbrt(q)
+	s = np.zeros_like(z)
+	mask = z != 0.0
+	s[mask] = z[mask] - a / z[mask]
 	w = s - 0.078 * s**5 / (1.0 + e)
 	return l + e * (3.0 * w - 4.0 * w**3)
 
@@ -111,6 +127,55 @@ def solve_kepler_danby(
 		u4 = -f / d4 if d4 else u3
 		u += u4
 	if abs(_f(u, q, e)) <= tol:
+		return u + cyc
+	raise RuntimeError("Danby solver did not converge")
+
+
+def solve_kepler_danby_array(
+	l: np.ndarray,
+	e: float,
+	tol: float = 1e-12,
+	max_iter: int = 50,
+) -> np.ndarray:
+	"""Solve Kepler's equation for an array of mean anomalies."""
+	l = np.asarray(l, dtype=float)
+	if not np.all(np.isfinite(l)):
+		raise ValueError("l must be finite")
+	e, tol, max_iter = _ecc(e), _fin(tol, "tol"), max_iter
+	if tol <= 0.0:
+		raise ValueError("tol must be positive")
+	if isinstance(max_iter, bool) or not isinstance(max_iter, int):
+		raise TypeError("max_iter must be an integer")
+	if max_iter < 1:
+		raise ValueError("max_iter must be positive")
+
+	q = (l + math.pi) % (2.0 * math.pi) - math.pi
+	cyc = l - q
+	u = _u0_array(q, e)
+	active = np.ones(l.shape, dtype=bool)
+	for _ in range(max_iter):
+		f = u - e * np.sin(u) - q
+		active &= np.abs(f) > tol
+		if not np.any(active):
+			return u + cyc
+		fp = 1.0 - e * np.cos(u[active])
+		fpp = e * np.sin(u[active])
+		f3 = e * np.cos(u[active])
+		f4 = -fpp
+		f = f[active]
+		u1 = -f / fp
+		d2 = fp + 0.5 * fpp * u1
+		u2 = u1.copy()
+		np.divide(-f, d2, out=u2, where=d2 != 0.0)
+		d3 = fp + 0.5 * fpp * u2 + f3 * u2**2 / 6.0
+		u3 = u2.copy()
+		np.divide(-f, d3, out=u3, where=d3 != 0.0)
+		d4 = fp + 0.5 * fpp * u3 + f3 * u3**2 / 6.0 + f4 * u3**3 / 24.0
+		u4 = u3.copy()
+		np.divide(-f, d4, out=u4, where=d4 != 0.0)
+		u[active] += u4
+	f = u - e * np.sin(u) - q
+	if np.all(np.abs(f) <= tol):
 		return u + cyc
 	raise RuntimeError("Danby solver did not converge")
 

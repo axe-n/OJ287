@@ -1,11 +1,17 @@
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from oj287_sim.solver import solve_kepler, solve_kepler_danby, solve_kepler_mikkola
+from oj287_sim.solver import (
+	solve_kepler,
+	solve_kepler_danby,
+	solve_kepler_danby_array,
+	solve_kepler_mikkola,
+)
 
 
 def test_kepler_circular_case():
@@ -20,3 +26,10 @@ def test_kepler_eccentric_residual():
 	for fn in (solve_kepler_mikkola, solve_kepler_danby, solve_kepler):
 		u = fn(l, e)
 		assert u - e * __import__("math").sin(u) == pytest.approx(l, abs=1e-12)
+
+
+def test_kepler_array_residual():
+	l = np.linspace(-40.0, 40.0, 1001)
+	u = solve_kepler_danby_array(l, 0.6)
+	assert u.shape == l.shape
+	assert np.max(np.abs(u - 0.6 * np.sin(u) - l)) <= 1e-12

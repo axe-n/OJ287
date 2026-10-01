@@ -30,3 +30,21 @@ def test_phase_crossings():
 	t = np.linspace(0.0, 2.0 * np.pi, 5)
 	r = simulate_orbit(m, t)
 	assert r["phase_crossings"] == pytest.approx([0.0, np.pi, 2.0 * np.pi])
+	assert r["period"] == pytest.approx(2.0 * np.pi)
+
+
+def test_period_uses_model_n():
+	m = BBHModel(0.0, 0.0, 0.2, 0.0, 0.8, 0.0, 0.0, 0.0, 0.3)
+	r = simulate_orbit(m, np.array([0.0, 1.0]))
+	assert r["period"] == pytest.approx(2.0 * np.pi / 0.8)
+
+
+def test_time_values_must_be_ordered():
+	m = BBHModel(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+	with pytest.raises(ValueError, match="ordered"):
+		simulate_orbit(m, np.array([0.0, 2.0, 1.0]))
+
+
+def test_beta_phi_is_derived():
+	m = BBHModel(0.0, 0.0, 0.3, 0.0, 1.0, 0.0, 0.0, 0.0, 0.3)
+	assert m.beta_phi == pytest.approx(b_phi(0.3))

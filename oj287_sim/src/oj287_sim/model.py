@@ -44,7 +44,6 @@ class BBHModel:
 	n_ddot: float
 	t0: float
 	e_t: float
-	beta_phi: float | None = None
 
 	def __post_init__(self) -> None:
 		self.phi0 = _fin(self.phi0, "phi0")
@@ -56,12 +55,9 @@ class BBHModel:
 		self.n_ddot = _fin(self.n_ddot, "n_ddot")
 		self.t0 = _fin(self.t0, "t0")
 		self.e_t = _ecc(self.e_t, "e_t")
-		if self.beta_phi is None:
-			self.beta_phi = b_phi(self.e_phi)
-		else:
-			self.beta_phi = _fin(self.beta_phi, "beta_phi")
-			if not 0.0 <= self.beta_phi < 1.0:
-				raise ValueError("beta_phi must satisfy 0 <= beta_phi < 1")
+		self.beta_phi = b_phi(self.e_phi)
+		if not 0.0 <= self.beta_phi < 1.0:
+			raise ValueError("beta_phi must satisfy 0 <= beta_phi < 1")
 
 	def mean_anomaly(self, t: float) -> float:
 		"""Return ``l(t)`` from the cubic mean-anomaly expansion."""
@@ -82,3 +78,6 @@ class BBHModel:
 		if u is None:
 			u = solve_kepler(self.mean_anomaly(t), self.e_t)
 		return self.phase_angle(u)
+		
+	def Per(self) -> float:
+		return 2.0 * math.pi / self.n
