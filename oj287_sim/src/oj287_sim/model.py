@@ -78,6 +78,6 @@ class BBHModel:
 		if u is None:
 			u = solve_kepler(self.mean_anomaly(t), self.e_t)
 		return self.phase_angle(u)
-		
+
 	def Per(self) -> float:
 		return 2.0 * math.pi / self.n
